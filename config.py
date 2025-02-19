@@ -7,9 +7,10 @@ from .lib import fusionAddInUtils as futil
 DEBUG = True
 ADDIN_NAME = os.path.basename(os.path.dirname(__file__))
 COMPANY_NAME = "IMA LLC"
-COMPANY_HUB =""
+COMPANY_HUB = ""
 
-#COMPANY_HUB = "a.YnVzaW5lc3M6aW1hbGxj"
+# COMPANY_HUB = "a.YnVzaW5lc3M6aW1hbGxj"
+
 
 def loadHub(__file__):
 
@@ -32,13 +33,15 @@ def loadHub(__file__):
     else:
         with open(my_hub_path) as json_file:
             my_hub = json.load(json_file)
-            COMPANY_HUB = my_hub.get('HUB_ID')
+            COMPANY_HUB = my_hub.get("HUB_ID")
+
+
 data = loadHub(__file__)
 
 design_workspace = "FusionSolidEnvironment"
 tools_tab_id = "ToolsTab"
 my_tab_name = "Power Tools"
 
-my_panel_id = f"{ADDIN_NAME}_panel_2"
-my_panel_name = "Tools"
+my_panel_id = f"PT_{my_tab_name}"
+my_panel_name = "Power Tools"
 my_panel_after = ""
