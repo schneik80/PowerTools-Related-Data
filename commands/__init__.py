@@ -1,9 +1,7 @@
-# from .refrences import entry as refrences
 from .relateddata import entry as relateddata
 from .confighub import entry as confighub
 
 commands = [
-    # refrences,
     confighub,
     relateddata,
 ]
