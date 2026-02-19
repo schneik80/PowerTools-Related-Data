@@ -153,9 +153,6 @@ Network Trash Folder
 .apdisk
 
 #user specific data files
-docs.json
-data.json
 hub.json
-commands/relateddata/docs.json
-commands/relateddata/data.json
 Hub.json
+cache/*.json

@@ -1,22 +1,26 @@
-# Power Tools for Fusion v0.8
+# Power Tools for Fusion
 
-Make working as a team, cloud data, and with assemblies more productive.
+Make working as a team, with cloud data, and with assemblies more productive.
 
-## Configuration
+## Commands
 
-There are several json files that need to be configured. Documentation on how to configure is TODO.
+### [Configure Hub](./docs/Configure%20Hub.md)
 
-## Data Workflow
+One-time setup per machine and hub. Open a document saved in your templates folder, then run this command to register the hub, project, and folder automatically. Hub configuration is saved to `hub.json` at the add-in root. Multiple hubs are supported.
 
-**[Create Related Data](./docs/Related%20Data.md)**
+### [Create Related Data](./docs/Related%20Data.md)
 
-Essential for Teams working in multiple disciplines allowing users to create  related documents (as an Assembly) to contain different discipline work, like CAM or Simulation. The Assembly document is copied from a cloud project/folder allowing for the new documents to have already saved information to automate workflows.
+Creates a new related document by copying a template from your configured hub's templates folder and inserting the active document as an external reference. Essential for teams working across multiple disciplines — enables parallel work without permission conflicts or version locking.
 
-**[Reference Manager](./docs/Reference%20Manager.md)**
+- Select from a list of `.f3d` templates stored in your hub.
+- New document is auto-named as `<source name> ‹+› <template name>`.
+- Templates are cached locally after the first run for faster load times.
 
-Show all references in the active document and their status. Provides utilities to work with references.
+### [Document References](./docs/Reference%20Manager.md)
 
-- Update all references or individually.
-- Allow the selection of versions per reference.
-- Open a reference in a new tab.
-- 
+Shows all data relationships attached to the active document, grouped by type, in a single dialog.
+
+- **Parents** — documents this file references.
+- **Children** — documents that reference this file.
+- **Drawings** — associated `.f2d` drawing files.
+- **Related Data** — related documents linked via the `‹+›` naming convention.

@@ -4,27 +4,26 @@
 
 ## Description
 
-There are several different tools in Fusion to update a referenced document. These are spread out between the QAT (Quick Access Toolbar), the browser.
+**Document References** reports all inbound and outbound data relationships for the active document in a single dialog. Relationships are grouped by type with a count for each group and a total count in the dialog title.
 
-If you use nesting manufacturing workflows you may have used the Reference Manager to manage source documents for nest studies. If you are not familiar with this tool, you now can now access the Reference Manager outside of nesting for general document management workflows.
+| Group | Contents |
+|---|---|
+| **Parents** | Documents this document references (source files inserted as external references) |
+| **Children** | Documents that reference this document |
+| **Drawings** | `.f2d` drawing documents associated with this document |
+| **Related Data** | Related documents created by the **Create Related Data** command (identified by the `‹+›` marker in their name) |
 
-Reference Manager Dialog:
+![Document References dialog](assets/docrefs_001.png)
 
-![dialog](/docs/assets/refmanager_001.png)
-
-With this tool, you can:
-
-- Update all references
-- Update one or select references independently
-- Open a reference document to a new tab
-
-
+---
 
 ## Access
 
-Access to the **Reference Manager** command is from the **QAT** (Quick Access Toolbar).
+**Document References** is in the **Power Tools** panel on the **Power Tools** tab of the **Design Workspace**.
 
-![access](/docs/assets/refmanager_002.png)
+![Power Tools panel](assets/docrefs_002.png)
+
+---
 
 [Back to Readme](../README.md)
 

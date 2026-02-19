@@ -1,21 +1,22 @@
-import adsk.core
-import os, os.path
+import adsk.core, adsk.fusion
+import os
 import json
 from ...lib import fusionAddInUtils as futil
 from ... import config
 
 app = adsk.core.Application.get()
 ui = app.userInterface
-dropDownCommandInput = adsk.core.DropDownCommandInput.cast(None)
-boolvalueInput = adsk.core.BoolValueCommandInput.cast(None)
-stringDocname = adsk.core.StringValueCommandInput.cast(None)
-my_hub = app.data.activeHub
 
-# create doc name values
+# Active hub ID captured in command_created and reused by all handlers.
+_active_hub_id = ""
+
+# Doc name values shared across command handlers.
 docSeed = ""
 docTitle = ""
-docSeed = ""
-my_DocsDictSorted = ()
+docURN = ""
+
+# Template dict for the current hub — populated fresh in command_created.
+my_DocsDictSorted = {}
 
 # command identity information.
 CMD_ID = f"{config.COMPANY_NAME}_{config.ADDIN_NAME}_cmdDialog"
@@ -39,70 +40,89 @@ ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resource
 local_handlers = []
 
 
-# Load project and folder from json
-def loadProject(__file__):
-    global app, data, my_DocsDictSorted
-
-    my_addin_path = os.path.dirname(os.path.realpath(__file__))
-    my_projectfolder_json_path = os.path.join(my_addin_path, "data.json")
-    my_docs_json_path = os.path.join(my_addin_path, "docs.json")
-
-    # check if the documents json has been created
-    docsExist = os.path.isfile(my_docs_json_path)
-    futil.log(f"{CMD_NAME} Doc Json Exists: {docsExist}")
-
-    if docsExist == False:
-
-        with open(my_projectfolder_json_path) as json_file:
-            data = json.load(json_file)
-
-        app = adsk.core.Application.get()
-        # ui = app.userInterface
-        my_hub = app.data.activeHub
-        my_project = my_hub.dataProjects.itemById(data["PROJECT_ID"])
-        if my_project is None:
-            ui.messageBox(
-                f"Project with id:{data['PROJECT_ID']} not found, review the readme file for instructions on how to set up the add-in."
-            )
-            return data
-        my_folder = my_project.rootFolder.dataFolders.itemById(data["FOLDER_ID"])
-        if my_folder is None:
-            ui.messageBox(
-                f"Folder with id:{data['FOLDER_ID']} not found, review the readme file for instructions on how to set up the add-in."
-            )
-            return data
-
-        my_DocsDictUnsorted = {}
-        for data_file in my_folder.dataFiles:
-            if data_file.fileExtension == "f3d":
-                name_Dict = data_file.name + "dict"
-                my_DocsDictUnsorted.update(
-                    {
-                        name_Dict: {
-                            "name": data_file.name,
-                            "urn": data_file.id,
-                        }
-                    }
-                )
-
-        my_DocsDictSorted = dict(sorted(my_DocsDictUnsorted.items()))
-        futil.log(f"{CMD_NAME} Doc Data Created: {my_DocsDictSorted}")
-        ...
-
-        my_DocsJson = json.dumps(my_DocsDictSorted)
-        with open(my_docs_json_path, "w") as f:
-            f.write(my_DocsJson)
-            futil.log(f"{CMD_NAME} Doc Json Saved")
-    else:
-
-        with open(my_docs_json_path) as json_file:
-            my_DocsDictSorted = json.load(json_file)
-            futil.log(f"{CMD_NAME} Doc Data Loaded: {my_DocsDictSorted}")
-
-        return
+def _cache_path_for_hub(hub_id: str) -> str:
+    """Return the absolute path to the cache file for *hub_id*."""
+    return os.path.join(config.CACHE_PATH, f"{hub_id}.json")
 
 
-data = loadProject(__file__)
+def _load_templates_for_hub(hub_id: str) -> dict:
+    """Return the template dict for *hub_id*.
+
+    Checks cache/<hub_id>.json first. On a cache miss, fetches live from the
+    API, writes the cache file, then returns the result.
+    Returns an empty dict and shows a message box on any configuration error.
+    """
+    # --- cache hit ---
+    cache_file = _cache_path_for_hub(hub_id)
+    if os.path.isfile(cache_file):
+        with open(cache_file) as f:
+            cached = json.load(f)
+        futil.log(f"{CMD_NAME} Templates loaded from cache for hub {hub_id}")
+        return cached
+
+    # --- cache miss: fetch from API ---
+    hub_cfg = config.COMPANY_HUB_CONFIGS.get(hub_id)
+    if not hub_cfg:
+        ui.messageBox(
+            "No configuration found for this hub.\n"
+            "Please run 'Configure Hub' and try again.",
+            "Hub Not Configured",
+            0,
+            3,
+        )
+        return {}
+
+    project_id = hub_cfg.get("project_id", "")
+    folder_id = hub_cfg.get("folder_id", "")
+
+    if not project_id or not folder_id:
+        ui.messageBox(
+            "The hub configuration is incomplete (missing project or folder ID).\n"
+            "Please run 'Configure Hub' again from a document in your templates folder.",
+            "Incomplete Hub Config",
+            0,
+            3,
+        )
+        return {}
+
+    my_hub = app.data.activeHub
+    my_project = my_hub.dataProjects.itemById(project_id)
+    if my_project is None:
+        ui.messageBox(
+            f"Templates project (id: {project_id}) not found.\n"
+            "Please reconfigure the hub.",
+            "Project Not Found",
+            0,
+            3,
+        )
+        return {}
+
+    my_folder = my_project.rootFolder.dataFolders.itemById(folder_id)
+    if my_folder is None:
+        ui.messageBox(
+            f"Templates folder (id: {folder_id}) not found.\n"
+            "Please reconfigure the hub.",
+            "Folder Not Found",
+            0,
+            3,
+        )
+        return {}
+
+    unsorted = {}
+    for data_file in my_folder.dataFiles:
+        if data_file.fileExtension == "f3d":
+            key = data_file.name + "dict"
+            unsorted[key] = {"name": data_file.name, "urn": data_file.id}
+
+    sorted_dict = dict(sorted(unsorted.items()))
+
+    # Write cache so subsequent opens skip the API call.
+    os.makedirs(config.CACHE_PATH, exist_ok=True)
+    with open(cache_file, "w") as f:
+        json.dump(sorted_dict, f, indent=2)
+
+    futil.log(f"{CMD_NAME} Templates fetched and cached for hub {hub_id}")
+    return sorted_dict
 
 
 # Executed when add-in is run.
@@ -114,7 +134,6 @@ def start():
 
     # Define an event handler for the command created event. It will be called when the button is clicked.
     futil.add_handler(cmd_def.commandCreated, command_created)
-    
 
     # ******** Add a button into the UI so the user can run the command. ********
     # Get the target workspace the button will be created in.
@@ -156,18 +175,26 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
 
     # https://help.autodesk.com/view/fusion360/ENU/?contextId=CommandInputs
     inputs = args.command.commandInputs
-    global app, docSeed, docURN
+    global _active_hub_id, docSeed, docURN, my_DocsDictSorted
 
-    #hub check
-    hub = app.data.activeHub
-    if hub.id != config.COMPANY_HUB:
-        futil.log(f'active hub is {hub.id}.\n{config.COMPANY_HUB} was expected')
+    # Reload config so any recently-configured hub is visible, then capture hub ID.
+    config.reload_hub_config()
+    _active_hub_id = app.data.activeHub.id
+
+    if _active_hub_id not in config.COMPANY_HUB:
+        futil.log(f"active hub is {_active_hub_id}.\n{config.COMPANY_HUB} was expected")
         ui.messageBox(
             "The active hub is not configured for this command.\nPlease switch to the correct hub and try again.",
             "Incorrect Hub",
             0,
             3,
         )
+        return
+
+    # Load templates for the current hub (cache/<hub_id>.json when available).
+    my_DocsDictSorted = _load_templates_for_hub(_active_hub_id)
+    if not my_DocsDictSorted:
+        # _load_templates_for_hub already showed an error message.
         return
 
     returnValue = 1

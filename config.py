@@ -7,36 +7,54 @@ from .lib import fusionAddInUtils as futil
 DEBUG = True
 ADDIN_NAME = os.path.basename(os.path.dirname(__file__))
 COMPANY_NAME = "IMA LLC"
-COMPANY_HUB = ""
 
-# COMPANY_HUB = "a.YnVzaW5lc3M6aW1hbGxj"
+# Root path of the add-in and cache directory.
+ADDIN_PATH = os.path.dirname(os.path.realpath(__file__))
+CACHE_PATH = os.path.join(ADDIN_PATH, "cache")
+
+# List of allowed hub IDs, populated by loadHub().
+COMPANY_HUB = []
+
+# Per-hub config: hub_id -> {"name": str, "project_id": str, "folder_id": str}
+COMPANY_HUB_CONFIGS = {}
 
 
 def loadHub(__file__):
+    """Load hub configuration from hub.json and populate COMPANY_HUB / COMPANY_HUB_CONFIGS."""
+    global COMPANY_HUB, COMPANY_HUB_CONFIGS
 
-    app = adsk.core.Application.get()
-    ui = app.userInterface
     my_addin_path = os.path.dirname(os.path.realpath(__file__))
     my_hub_path = os.path.join(my_addin_path, "hub.json")
 
-    docsExist = os.path.isfile(my_hub_path)
+    if not os.path.isfile(my_hub_path):
+        # No hub configured yet — commands will surface their own error message.
+        COMPANY_HUB = []
+        COMPANY_HUB_CONFIGS = {}
+        return
 
-    if docsExist == False:
-        global COMPANY_HUB
+    with open(my_hub_path) as json_file:
+        hub_data = json.load(json_file)
 
-        ui.messageBox(
-            "Hub Configuration file is missing.\nPlease read the documentation and configure your hub",
-            "No Hub Configured",
-            0,
-            3,
-        )
-    else:
-        with open(my_hub_path) as json_file:
-            my_hub = json.load(json_file)
-            COMPANY_HUB = my_hub.get("HUB_ID")
+    hubs = hub_data.get("hubs", [])
+    COMPANY_HUB = [entry["id"] for entry in hubs]
+    COMPANY_HUB_CONFIGS = {
+        entry["id"]: {
+            "name": entry.get("name", ""),
+            "project_id": entry.get("project_id", ""),
+            "project_name": entry.get("project_name", ""),
+            "folder_id": entry.get("folder_id", ""),
+            "folder_name": entry.get("folder_name", ""),
+        }
+        for entry in hubs
+    }
 
 
-data = loadHub(__file__)
+def reload_hub_config():
+    """Reload hub configuration from disk. Call after hub.json is written."""
+    loadHub(__file__)
+
+
+loadHub(__file__)
 
 design_workspace = "FusionSolidEnvironment"
 tools_tab_id = "ToolsTab"

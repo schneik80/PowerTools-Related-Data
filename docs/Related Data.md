@@ -1,22 +1,24 @@
-# Related Data
+# Create Related Data
 
 [Back to Readme](../README.md)
 
 ## Description
 
-**WARNING** - Advanced Configuration required
+**Create Related Data** is a Fusion add-in command in the **Design Workspace → Create Panel** that copies a pre-configured template document from your Team Hub and inserts the active source document as an external reference inside it.
 
+The result is a new *related document* — a separate file that references your source design without locking or modifying it. Multiple team members can work in their own related documents simultaneously, and each document's lifecycle, permissions, and workspace can be managed independently.
 
-When working as a team, with imported AnyCAD data, or on multiple manufacturing processes, it is useful to insert an existing source document into a new related document so that work can be done in the new related document and not change or lock the source (also called seed) document. This add-in creates a Design Workspace command that produces a new related document from a pre-configured list of saved start documents. Start documents are copied as a new document and then a reference the source document. The source document must be the active document and must be saved before this add-in's command can be used. If the document is not saved an error will instruct you to save first.  
+When creating the new related document, select from a configurable list of templates stored in your hub. The add-in auto-names the new document using the pattern `<source name> ‹+› <template name>`, making it easy to understand the relationship at a glance. You can also disable auto-naming to provide a custom name.
 
-When creating the new related document you may select from a configurable list of start documents. This allows you to have many start documents for different workflows. A common use case is to create workflows dor each discipline that may want to reference the seed document. Rather than create each discipline's data inside the seed document the discipline work is distributed into related documents.  For teams this prevents multiple users doing their discipline work fighting for write access tot the source design. IT also allows for permissions and lifecycle to be managed on each discipline separately. When creating a new related document the add-in pre-populates the name of the new related document to capture workflow and the name of the source document. This makes finding and understand why the new related document was created easier.
+> **Requirement:** The source document must be saved before this command can be used.
 
-Here are a few examples for how you might use this add-in:  
+---
 
-**Manufacture a native Fusion 3D Design**
-You have an existing Fusion Design and you want another team member to work on manufacturing setups and programming. By creating a related document that references the current design your team member can work in their own document without permission conflicts. In addition when you share your design you no longer have to share your private manufacturing information as it is store in its own document.  
+## Use Cases
 
-In this graph we see how the add-in help create the Manufacturing Document referencing the Fusion Design you as **User A** working **Fusion 3D Design**. Tour team member as **User B** can work on the **Manufacturing Document** in parallel.  
+### Manufacture a Native Fusion 3D Design
+
+Create a Manufacturing related document so a CNC programmer can work in parallel without locking or modifying the original design. When you share your design file, manufacturing setups and toolpaths stay private in their own separate document.
 
 ```mermaid
 %%{
@@ -45,39 +47,9 @@ d -.-> a --"X-Ref"--> b
 
 ```
 
-**AnyCAD**
-You have an existing SolidWorks document that you upload using Fusion 360 Team to your hub.
+### AnyCAD — Reference an Uploaded Non-Native File
 
-You can open this SolidWorks part in Fusion 360 Desktop client and then use this add-in to create a new referencing document for manufacturing and CNC programming.
-
-```mermaid
-%%{
-init: {
-'theme':'base',
-'themeVariables': {
-'primaryColor': '#f0f0f0',
-'primaryBorderColor': '#454F61',
-'lineColor': '#59cff0',
-'tertiaryColor': '#e1ecf5',
-'fontSize': '14px'
-}
-}
-}%%
-
-graph TD
-
-A(SolidWorks Part)
-B(Manufacturing\n Related Document)
-
-B --"X-Ref"--> A
-
-```
-
-Any changes to the SolidWorks part can saved and your manufacturing document will associatively update when you update the the new version.
-
-> Note: AnyCAD workflows are only available when using a Team Hub and a Commercial, Education or Start UP Entitlement. Personal ( aka Free aka Hobby ) Entitlements do not have access to AnyCAD Workflows.
-
-Later you may need to run FEA simulations on the same SolidWorks design. Using the add-in you can create a new related document referencing the SolidWorks AnyCAD part.
+Upload a SolidWorks (or other CAD) file via Fusion Team, then use this add-in to create Manufacturing or Simulation related documents that reference it. When the source file is updated and saved, the related document can update to the new version.
 
 ```mermaid
 %%{
@@ -97,7 +69,7 @@ graph TD
 
 A(SolidWorks Part)
 B(Manufacturing\n Related Document)
-C(Simulation\n Related  Document)
+C(Simulation\n Related Document)
 
 i((User A))
 j((User B))
@@ -110,12 +82,13 @@ j -.-> C
 
 ```
 
-Two related documents have been created. One for Manufacturing and one for Simulation.
-Each document can have a unique user working on it in parallel. This is very useful for teams to ensure you can have different discipline working on a design concurrently.
+Two related documents — one for Manufacturing, one for Simulation — each with a dedicated user working in parallel. This allows different disciplines to work concurrently without permission conflicts.
 
-**Render designs with a common render setup**
-Using the start document's ability to pre store information. You open a new empty document and activate the rendering workspace.
-You can define new emissive bodies as lights and store several different options for floors. In addition you setup the render defaults for exposure, HDRI Environment map, background, and camera focal settings. Defining these in the start part ensure that as you make future renderings you can have consistent look and feel to you renderings.
+> **Note:** AnyCAD workflows require a **Team Hub** and a Commercial, Education, or Start-Up entitlement. Personal (free/hobby) entitlements do not include AnyCAD.
+
+### Render Designs with a Consistent Look
+
+Store lighting rigs, exposure settings, HDRI environments, and camera presets inside a Render template document. Every new render document created from this template starts with a consistent, pre-configured look.
 
 ```mermaid
 %%{
@@ -140,162 +113,92 @@ B --"X-Ref"--> A
 
 ```
 
-## Start Documents
+---
 
-To  use this add-in, pre-create and save start documents that have information already defined in them. This allows you to automate and make smart start parts that can reduce setup for your intended workflows.
-You can create a specific start document for each workflow and set the default naming scheme as you configure this add-in for your specific hub, team and use cases.
+## Template Documents
 
-You can choose to save as much or as little information inside each start document. If you create start document for different disciplines, make sure the workspace for that discipline is active when you save. Fusion will honor that active workspace and your related data workflows will start in the right workspace automatically.
+Template documents are `.f3d` files stored in a dedicated folder inside a Team Hub project. The add-in lists every file in that folder as a selectable **Type** when you run the command.
 
-**TIP:** It its always useful to save a generic empty start document and configure a plain assembly or default start document option so you can always get a simple new reference assembly document when needed.
+### What to put in a template
 
+- **Active workspace** — Fusion preserves the active workspace when saving, so the new document opens directly in the right workspace (Design, Manufacture, Simulation, Render, etc.).
+- **Machine definitions, posts, and fixtures** for manufacturing templates.
+- **Material and appearance libraries** for assembly templates.
+- **Lighting rigs, render settings, and camera presets** for render templates.
+- **Document units preference.**
 
-## Configuration
+### Example template set
 
->**Note:** Creation of start parts, and their project folder is best done by a Fusion Team admin.
+| Template name | Purpose |
+|---|---|
+| `MFG - Haas.f3d` | Manufacture workspace with Haas machine, post, and fixture pre-loaded |
+| `MFG - Plasma.f3d` | Manufacture workspace with plasma cutter setup and toolpaths |
+| `ASSY - in.f3d` | Empty assembly in inches |
+| `ASSY - mm.f3d` | Empty assembly in millimetres |
+| `VIZ.f3d` | Render studio with custom lighting and floor stage elements |
 
-Open a web browser and log into [Fusion Team](https://www.autodesk.com/fusion-team). We need to create a Project to hold the start parts. This project needs to be available to all team members in your hub.  
+> **Tip:** Always include a generic empty assembly template so users can create a plain related document when no specialist template is needed.
 
-I recommend you create a new project called **Templates**.
+---
 
-Set this project to be "Open" if using legacy project permissions. Ideally you have the newer folder-level permissions in Fusion Team. Add the **all users** group to the project.  
+## Setup
 
-Create a **Start Parts** folder in the Templates project.
+### Step 1 — Create the Templates project and folder in Fusion Team
 
-Create or copy Fusion documents into this folder. Create a new document for each workflow. Name each document a short name that is clear on the start part's purpose.
+> This step is best performed by a Fusion Team administrator.
 
-For example:
+1. Sign in to [Fusion Team](https://www.autodesk.com/fusion-team).
+2. Create a new project — recommended name: **Templates**.
+3. Set project permissions so all team members can access it (use the _All Users_ group or equivalent folder-level permissions).
+4. Inside the project, create a folder — recommended name: **Related Data** or **Start Parts**.
+5. Create or upload `.f3d` documents into that folder — one file per workflow.
 
-Document name | Purpose|
---------------|--------|
-MFG - Haas.f3d| A document with, preselected machine, post, and fixtures and setup for a Haas CNC|
-MFG - Plasma.f3d| A document with preselected machine, post, setup, and toolpath for a cnc plasma|
-ASSY - in.f3d | A simple assembly in inches|
-ASSY - mm.f3d | A simple assembly in mm|
-VIZ.f3d | A render studio with custom lighting and stage elements like a floor|
+### Step 2 — Configure the Hub (once per machine and hub)
 
-### Setup the add-in for your custom start parts
+The **Configure Hub** command reads the open document's hub, project, and folder automatically. No manual JSON editing is required.
 
-The add-in needs to know where to find your start parts. We do this by creating a json file ( json is just a text file with a special extension and format).
+See the [Configure Hub](./Configure%20Hub.md) documentation for the full walkthrough.
 
-This json need to contain two identifiers. One for you project and second for your folder of start parts.
+In brief:
+1. Open any `.f3d` document that is already saved inside your templates folder.
+2. Run **Configure Hub** from the **Design Workspace → Create Panel**.
+3. Review the detected Hub, Project, and Folder in the confirmation dialog, then click **OK**.
 
-The easiest way to find these is to open on start part that is in the specific project and folder you have setup above.
+The hub configuration is written to `hub.json` at the add-in root. Multiple hubs can be configured — run **Configure Hub** once for each hub.
 
-### How to find your own folder and project ID's
+### Step 3 — Use the command
 
-> **NOTE:** If you attempt to run the command without editing the settings as shown below, the add-in will throw an error.
+1. Open the source document you want to reference (it must be saved).
+2. Run **Create Related Data** from the **Design Workspace → Create Panel**.
+3. Select a template from the **Type** drop-down.
+4. By default the new document is auto-named as `<source name> ‹+› <template name>`. Uncheck **Auto-Name** to enter a custom name.
+5. Click **OK**. The new related document is created, saved in the same folder as the source document, and the source is inserted as an external reference.
 
-Open the document you want to use as a start part.
+![Command in Create Panel](assets/000-CDD.png)
 
-From the application menu turn on the Text Command Pallet
-![Text Command Pallet](assets/003-CDD.png)
+![Create Related Data dialog](assets/001-CDD.png)
 
-Next, make sure you have "Py" turned on at the far right bottom of the **Text Commands** pallet.
-![Py settings](assets/004-CDD.png)
+![Template type drop-down](assets/002-CDD.png)
 
-In the text command pallet type:
+---
 
-```py
-app=adsk.core.Application.get()
-```
+## Template Cache
 
-Next type:
+After the first successful run, the add-in saves a local cache file at `cache/<hub-id>.json` listing all templates found in the configured folder. Subsequent runs load from the cache instead of querying the API, making the dialog open faster.
 
-```py
-project=app.data.activeProject
-```
+**To refresh the cache** (e.g. after adding or renaming templates):
 
-Now type:
+Delete the relevant file from the `cache/` folder at the add-in root. The next run will re-query the folder and rebuild the cache automatically.
 
-```py
-project.id
-```
-
-Fusion will return the ID for the open active hub. Select this string and copy it using the Right Mouse Click menu. Copy the entire string "a.XXXXXX"
-
-Now we get the folder for the open document. This is the folder where all your start documents ae stored. You only need to ensure one start document is open and the active document.
-
-In the **Text Commands** pallet type:
-
-```py
-doc = app.activeDocument.dataFile.parentFolder.id
-```
-
-Then type:
-
-```py
-doc
-```
-
-Fusion will return the urn for the folder for active active document. Select this string and copy it using the Right Mouse Click menu. Copy the entire string "urn:XXXXXX"
-
-You should see something like this in the **Text Commands** pallet:
-
-```py
-app=adsk.core.Application.get()
-
-project=app.data.activeProject
-
-project.id
-a.1234ABCDERgh9101234ABCDERgh910
-
-doc = app.activeDocument.dataFile.parentFolder.id
-
-doc
-urn:adsk.wipprod:fs.folder:co.1234ABCDERgh910
-```
-
-Open Smple Data.json located in the add-in install directory here:
-
->.\commands\relateddata\Sample data.json
-
-Edit this and paste in your PROJECT_ID and FOLDER_ID as shown:
-
-```json
-{"PROJECT_ID":"_Paste your Project ID here_","FOLDER_ID":"_Paste your Folder ID here_"}
-```
-
-Your Json file should look like this:
-
-```json
-{"PROJECT_ID":"a.1234ABCDERgh9101234ABCDERgh910","FOLDER_ID":"urn:adsk.wipprod:fs.folder:co.1234ABCDERgh910"}
-
-keeping in mind that your IDs will be different. **Use your IDsnot the values shown here.**
-```
-
-**Save the JSON file** and ensure you provide it to your team members.
-
-Rename _Sample Data.json_ to _data.json_. **Case Matters**.
-
-## You are now ready to use the Related Documents Add-In
-
-When you first run the add-in it will index your specified folder and auto generate a docs.json file and save it to the add-in's folder locally. Indexing the cloud folder can take a few seconds and persisting this data will allow fusion to start faster.
-
-If you add documents to the start parts folder you and all your team members should delete the docs.json that is auto-created when the add-in runs. This will force the add-in to recreate the documents json file with any changes as it will index the folder's documents and update. This check can take a few seconds or so.
-
-**TIP:** If you save your start documents with the workspace you want to default to, this workspace will automatically be active when the document opens.
+---
 
 ## Access
 
-Once the Add-in is installed and running, you find the command in the Design Workspace -> Create Panel at the bottom of the menu.
+**Create Related Data** is in the **Design Workspace → Create Panel** and is promoted to the main toolbar by default.
 
-![Command](assets/000-CDD.png)
+You can also pin it to the **Shortcuts** (S-key menu) for faster access.
 
-You can add this command to your toolbar or "S Key" shortcuts.
-
-Start the **Create Related Document** command. There will be a pause for a second or so as the list of documents is retrieved from your cloud Team Hub.
-
-![Command Dialog](assets/001-CDD.png)
-
-To select from the different start documents choose from the **Type** drop-down in the dialog displayed.
-
-![Start Documents](assets/002-CDD.png)
-
-The new related document is auto-named by default. You can uncheck the **Auto-Name** option and define a name of your own.
-
-Click **OK** and the new related document is created and your source document is inserted.
-
+---
 
 Thanks to contributions from:
 
