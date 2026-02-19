@@ -28,9 +28,23 @@ CMD_Description = (
 # Specify that the command will be promoted to the panel.
 IS_PROMOTED = True
 
-# Define the location where the command button will be created.
+# Define the tabs and panels where the command button will be created.
 WORKSPACE_ID = "FusionSolidEnvironment"
-PANEL_ID = "SolidCreatePanel"
+
+TABS = [
+    {
+        "TAB_ID": "AssemblyTab",
+        "TAB_NAME": "ASSEMBLY",
+        "PANEL_ID": "CreatePanel",
+        "PANEL_NAME": "Create",
+    },
+    {
+        "TAB_ID": "SolidTab",
+        "TAB_NAME": "SOLID",
+        "PANEL_ID": "SolidCreatePanel",
+        "PANEL_NAME": "Create",
+    },
+]
 
 # Resource location for command icons, here we assume a sub folder in this directory named "resources".
 ICON_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "")
@@ -136,32 +150,40 @@ def start():
     futil.add_handler(cmd_def.commandCreated, command_created)
 
     # ******** Add a button into the UI so the user can run the command. ********
-    # Get the target workspace the button will be created in.
     workspace = ui.workspaces.itemById(WORKSPACE_ID)
 
-    # Get the panel the button will be created in.
-    panel = workspace.toolbarPanels.itemById(PANEL_ID)
+    # Add the command to each tab/panel.
+    for tab_info in TABS:
+        toolbar_tab = workspace.toolbarTabs.itemById(tab_info["TAB_ID"])
+        if toolbar_tab is None:
+            toolbar_tab = workspace.toolbarTabs.add(
+                tab_info["TAB_ID"], tab_info["TAB_NAME"]
+            )
 
-    # Create the button command control in the UI at the end of the menu.
-    control = panel.controls.addCommand(cmd_def)
+        panel = toolbar_tab.toolbarPanels.itemById(tab_info["PANEL_ID"])
+        if panel is None:
+            panel = toolbar_tab.toolbarPanels.add(
+                tab_info["PANEL_ID"], tab_info["PANEL_NAME"]
+            )
 
-    # Specify if the command is promoted to the main toolbar.
-    control.isPromoted = IS_PROMOTED
+        control = panel.controls.addCommand(cmd_def)
+        control.isPromoted = IS_PROMOTED
 
 
 # Executed when add-in is stopped.
 def stop():
-    # Get the various UI elements for this command
     workspace = ui.workspaces.itemById(WORKSPACE_ID)
-    panel = workspace.toolbarPanels.itemById(PANEL_ID)
-    command_control = panel.controls.itemById(CMD_ID)
+
+    for tab_info in TABS:
+        toolbar_tab = workspace.toolbarTabs.itemById(tab_info["TAB_ID"])
+        if toolbar_tab:
+            panel = toolbar_tab.toolbarPanels.itemById(tab_info["PANEL_ID"])
+            if panel:
+                command_control = panel.controls.itemById(CMD_ID)
+                if command_control:
+                    command_control.deleteMe()
+
     command_definition = ui.commandDefinitions.itemById(CMD_ID)
-
-    # Delete the button command control
-    if command_control:
-        command_control.deleteMe()
-
-    # Delete the command definition
     if command_definition:
         command_definition.deleteMe()
 
