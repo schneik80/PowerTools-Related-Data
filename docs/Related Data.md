@@ -1,6 +1,6 @@
 # Create Related Data
 
-[Back to Readme](../README.md)
+[Back to README](../README.md)
 
 ## Overview
 
@@ -278,6 +278,6 @@ Thanks to contributions from:
 
 - [TheEppicJR](https://github.com/TheEppicJR)
 
-[Back to Readme](../README.md)
+[Back to README](../README.md)
 
-Copyright IMA LLC. All rights reserved.
+*Copyright © 2026 IMA LLC. All rights reserved.*

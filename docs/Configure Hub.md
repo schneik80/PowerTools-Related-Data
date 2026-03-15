@@ -1,6 +1,6 @@
 # Configure Hub
 
-[Back to Readme](../README.md)
+[Back to README](../README.md)
 
 ## Overview
 
@@ -151,6 +151,6 @@ C4Container
 
 ---
 
-[Back to Readme](../README.md)
+[Back to README](../README.md)
 
-Copyright IMA LLC. All rights reserved.
+*Copyright © 2026 IMA LLC. All rights reserved.*

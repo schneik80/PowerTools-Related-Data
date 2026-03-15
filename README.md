@@ -82,4 +82,8 @@ C4Context
 
 ## License
 
-Copyright IMA LLC. All rights reserved.
+This project is released under the [MIT License](LICENSE).
+
+---
+
+*Copyright © 2026 IMA LLC. All rights reserved.*
