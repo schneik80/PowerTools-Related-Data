@@ -1,4 +1,4 @@
-# Power Tools for Fusion — Related Data
+# PowerTools: Related Data for Autodesk Fusion
 
 Power Tools for Fusion is an Autodesk Fusion add-in that improves team productivity when working with cloud data and assemblies. The **Related Data** add-in lets teams create parallel workflow documents that reference a single source design — without locking, modifying, or duplicating it.
 
