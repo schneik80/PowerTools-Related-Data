@@ -155,17 +155,17 @@ Template documents are `.f3d` files stored in a dedicated folder inside a Team H
 
 ### Step 2 — Configure the hub (once per machine and hub)
 
-The **Configure Hub** command reads the open document's hub, project, and folder automatically. No manual JSON editing is required.
+The **Configure Hub** command opens Fusion's cloud folder picker, lets you browse to your templates folder, and resolves the owning hub and project automatically. No manual JSON editing is required.
 
 See the [Configure Hub](./Configure%20Hub.md) documentation for the full walkthrough.
 
 In brief:
 
-1. Open any `.f3d` document already saved inside your templates folder.
-2. Run **Configure Hub** from the **Quick Access Toolbar → File menu → PowerTools Settings** flyout.
-3. Review the detected Hub, Project, and Folder in the confirmation dialog, then click **OK**.
+1. Run **Configure Hub** from the **Quick Access Toolbar → File menu → PowerTools Settings** flyout.
+2. Click **OK** on the prompt to launch the cloud folder picker.
+3. Browse to the folder that contains your template `.f3d` files and confirm the selection.
 
-The hub configuration is written to `hub.json` at the add-in root. Multiple hubs can be configured — run **Configure Hub** once for each hub.
+The hub configuration is written to `hub.json` at the add-in root. Multiple hubs can be configured — run **Configure Hub** once for each hub. Re-running on an already-configured hub lets you re-point it to a new folder.
 
 ### Step 3 — Use the command
 

@@ -4,9 +4,9 @@
 
 ## Overview
 
-**Configure Hub** is a one-time setup command that registers an Autodesk Fusion Team Hub — along with its templates project and folder — with the Power Tools add-in. After a hub is configured, the **Create Related Data** command can read templates from that hub automatically.
+**Configure Hub** is a setup command that registers an Autodesk Fusion Team Hub — along with its templates project and folder — with the Power Tools add-in. After a hub is configured, the **Create Related Data** command can read templates from that hub automatically.
 
-The command reads the hub, project, and folder directly from the currently open document. No manual ID lookup or JSON editing is required.
+The command opens Fusion's cloud folder picker so you can browse to your templates folder directly. The hub and project that own the selected folder are resolved automatically. No manual ID lookup or JSON editing is required.
 
 ---
 
@@ -16,9 +16,9 @@ Run **Configure Hub** in the following situations:
 
 - The **first time** you install the add-in on a machine.
 - When you **connect to a new hub** that has not been configured on that machine yet.
-- After a team administrator creates a new templates folder in a different hub.
+- When you want to **re-point an existing hub entry** to a different templates folder (for example, after a team administrator moves or renames the folder).
 
-If the active hub is already configured, the command notifies you and makes no changes.
+If the active hub is already configured, the command shows the current location and lets you cancel out or pick a new folder to overwrite the existing entry.
 
 ---
 
@@ -28,7 +28,6 @@ Before running **Configure Hub**, ensure the following are in place in your Team
 
 1. A **project** accessible to all team members — recommended name: **Templates**.
 2. A **folder** inside that project containing your `.f3d` template documents — recommended name: **Related Data** or **Start Parts**.
-3. A saved `.f3d` document inside that folder to open in Fusion.
 
 See [Create Related Data — Step 1](./Related%20Data.md#step-1--create-the-templates-project-and-folder-in-fusion-team) for instructions on creating the templates project and folder.
 
@@ -38,19 +37,15 @@ See [Create Related Data — Step 1](./Related%20Data.md#step-1--create-the-temp
 
 ## How to configure a hub
 
-1. **Open a template document.** In Fusion, open any `.f3d` file that is already saved inside your templates folder. The document must be saved — unsaved documents cannot be used.
+1. **Run Configure Hub.** Select **Configure Hub** from the **Quick Access Toolbar → File menu → PowerTools Settings** flyout.
 
-2. **Run Configure Hub.** Select **Configure Hub** from the **Quick Access Toolbar → File menu → PowerTools Settings** flyout.
+2. **Acknowledge the prompt.** A short message tells you to browse to the cloud folder that contains your start parts or templates. Click **OK**.
 
-3. **Review the confirmation dialog.** The dialog displays the values detected from the open document:
+3. **Pick the templates folder.** Fusion's cloud folder picker opens. Navigate to the folder that contains your template `.f3d` files and confirm the selection. If a saved document is currently open, the picker starts in that document's parent folder as a convenience.
 
-   | Field | Description |
-   |---|---|
-   | Hub | Name of your Autodesk Team Hub |
-   | Templates Project | Name of the project that contains your templates folder |
-   | Templates Folder | Name of the folder that contains your template documents |
+4. **Confirm the result.** A success message confirms the hub was added (or updated) and lists the resolved hub name, project, and folder.
 
-4. **Click OK** to save the configuration. A confirmation message confirms the hub was added successfully.
+If the active hub is already in `hub.json`, you are asked first whether to keep the existing entry or pick a new folder. Choosing a new folder overwrites the entry in place.
 
 The hub entry is written to `hub.json` at the add-in root in the following format:
 
@@ -69,7 +64,7 @@ The hub entry is written to `hub.json` at the add-in root in the following forma
 }
 ```
 
-Multiple hubs are supported. Each run of **Configure Hub** appends a new entry for a different hub. Existing entries are never overwritten.
+Multiple hubs are supported. Run **Configure Hub** once per hub. Re-running on a hub that is already configured upserts the entry — the existing record is replaced in place rather than duplicated.
 
 To remove a hub, open `hub.json` and delete the corresponding entry from the `hubs` array.
 
@@ -79,9 +74,8 @@ To remove a hub, open `hub.json` and delete the corresponding entry from the `hu
 
 | Message | Cause | Resolution |
 |---|---|---|
-| *Hub Already Added* | The active hub is already present in `hub.json` | No action is needed — the hub is already configured |
-| *No Document Open* | No document is currently open in Fusion | Open a saved `.f3d` document from your templates folder and try again |
-| *Document Not Saved* | The open document has not been saved to the Team Hub | Save the document to your templates folder and try again |
+| *Hub Already Configured* | The active hub already has an entry in `hub.json` | Click **Cancel** to keep the existing configuration, or **OK** to pick a new folder and overwrite the entry |
+| *Hub Not Found* | The selected folder could not be matched to a hub the user has access to | Confirm you are signed in to the correct Autodesk account and that the folder lives in a project you can read; then re-run the command |
 
 ---
 
@@ -91,12 +85,12 @@ To remove a hub, open `hub.json` and delete the corresponding entry from the `hu
 
 When you run **Configure Hub**, the add-in follows this sequence:
 
-1. Checks whether the active hub ID is already present in `hub.json`. If it is, the command exits without making changes.
-2. Verifies that a document is open and saved.
-3. Reads the active document's parent folder from the Fusion API, then walks up the folder hierarchy to locate the root project folder.
-4. Matches the root folder against the hub's data projects to identify the project name and ID.
-5. Displays a read-only confirmation dialog showing the detected hub, project, and folder values.
-6. On confirmation (OK), appends the new hub entry to `hub.json` and reloads the in-memory configuration so all commands immediately see the new hub.
+1. Loads the current `hub.json` and looks up the active hub. If an entry already exists, an OK / Cancel prompt shows the current project and folder so you can either keep the configuration or proceed and overwrite it.
+2. Displays an informational prompt instructing you to browse to the cloud folder that contains your start parts or templates.
+3. Opens Fusion's cloud folder picker. If a saved document is open, the picker starts in that document's parent folder.
+4. Reads the selected folder's parent project, then iterates through the available data hubs to find the one that owns that project.
+5. Builds a hub entry containing the hub, project, and folder IDs and names, and upserts it into the `hubs` array in `hub.json` (replacing any previous entry with the same hub ID).
+6. Reloads the in-memory configuration so all commands immediately see the new hub, then displays a success message that says whether the entry was added or updated.
 
 ### System context
 
@@ -107,15 +101,15 @@ C4Context
   Person(user, "Fusion User", "Runs Configure Hub once per hub, per machine")
 
   System_Boundary(addin, "PowerTools Add-in") {
-    System(configHub, "Configure Hub Command", "Reads the open document's location and writes hub configuration to disk")
+    System(configHub, "Configure Hub Command", "Opens a cloud folder picker, resolves the owning hub and project, and writes hub configuration to disk")
   }
 
   SystemExt(fusionTeam, "Autodesk Fusion Team", "Hosts the hub, projects, folders, and template .f3d files")
   SystemDb(hubJson, "hub.json", "Local file at the add-in root — stores registered hub IDs, project IDs, and folder IDs")
 
-  Rel(user, configHub, "Opens a template document, then runs Configure Hub")
-  Rel(configHub, fusionTeam, "Reads the active document hub, project, and folder via Fusion API")
-  Rel(configHub, hubJson, "Appends the new hub entry on confirmation")
+  Rel(user, configHub, "Runs Configure Hub and selects the templates folder")
+  Rel(configHub, fusionTeam, "Browses cloud folders; resolves the owning hub and project via Fusion API")
+  Rel(configHub, hubJson, "Upserts the hub entry by hub id")
 ```
 
 ### Container detail
@@ -127,19 +121,20 @@ C4Container
   Person(user, "Fusion User")
 
   Container_Boundary(addin, "PowerTools Add-in") {
-    Container(cmdCreated, "command_created handler", "Python / Fusion API", "Validates preconditions; detects hub, project, and folder from the active document; builds the read-only confirmation dialog")
-    Container(cmdExecute, "command_execute handler", "Python / json", "Appends the hub entry to hub.json; calls config.reload_hub_config()")
+    Container(cmdCreated, "command_created handler", "Python / Fusion API", "Prompts for confirmation if the hub is already configured; opens the cloud folder picker; resolves the owning hub via _resolve_hub_for_folder(); upserts hub.json")
+    Container(resolveHub, "_resolve_hub_for_folder()", "Python / Fusion API", "Walks app.data.dataHubs and returns the DataHub whose dataProjects include the selected folder's parent project")
     Container(configModule, "config.py", "Python", "Loads and exposes COMPANY_HUB and COMPANY_HUB_CONFIGS in memory from hub.json")
   }
 
   SystemDb(hubJson, "hub.json", "Local JSON configuration file at the add-in root")
-  SystemExt(fusionApi, "Fusion API (adsk.core)", "Provides activeHub, activeDocument, dataFile, parentFolder, and dataProjects")
+  SystemExt(fusionApi, "Fusion API (adsk.core)", "Provides createCloudFolderDialog(), DataFolder.parentProject, app.data.dataHubs, and DataProjects.itemById()")
 
-  Rel(user, cmdCreated, "Clicks Configure Hub")
-  Rel(cmdCreated, fusionApi, "Reads active hub, document folder, and project IDs")
-  Rel(cmdCreated, cmdExecute, "Passes pending hub data when the user clicks OK")
-  Rel(cmdExecute, hubJson, "Writes the updated hubs array")
-  Rel(cmdExecute, configModule, "Calls reload_hub_config()")
+  Rel(user, cmdCreated, "Clicks Configure Hub and picks the templates folder")
+  Rel(cmdCreated, fusionApi, "Opens cloud folder picker; reads parentProject of the selection")
+  Rel(cmdCreated, resolveHub, "Calls _resolve_hub_for_folder(folder)")
+  Rel(resolveHub, fusionApi, "Iterates dataHubs and matches by project id")
+  Rel(cmdCreated, hubJson, "Upserts the hubs array on success")
+  Rel(cmdCreated, configModule, "Calls reload_hub_config()")
   Rel(configModule, hubJson, "Reads hub entries on load or reload")
 ```
 

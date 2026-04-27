@@ -16,11 +16,11 @@ Power Tools for Fusion is an Autodesk Fusion add-in that improves team productiv
 
 ### [Configure Hub](./docs/Configure%20Hub.md)
 
-**Configure Hub** is a one-time setup command that registers an Autodesk Fusion Team Hub — along with its templates project and folder — with the add-in. Run this command once per hub, per machine.
+**Configure Hub** is a setup command that registers an Autodesk Fusion Team Hub — along with its templates project and folder — with the add-in. Run this command once per hub, per machine.
 
-Open any `.f3d` document that is already saved inside your templates folder, then run **Configure Hub**. The command detects the hub, project, and folder from the open document automatically. No manual ID lookup or JSON editing is required.
+Run **Configure Hub** and use Fusion's cloud folder picker to browse to the folder that contains your start parts or templates. The owning hub and project are resolved automatically. No manual ID lookup or JSON editing is required.
 
-Hub configuration is stored in `hub.json` at the add-in root. Multiple hubs are supported. To remove a hub, edit `hub.json` directly.
+Hub configuration is stored in `hub.json` at the add-in root. Multiple hubs are supported. Re-running on a hub that is already configured lets you re-point it to a different folder. To remove a hub, edit `hub.json` directly.
 
 **Location:** Quick Access Toolbar → File menu → **PowerTools Settings** flyout
 
@@ -63,8 +63,8 @@ C4Context
 
   Rel(user, configHub, "Runs once per hub")
   Rel(user, relatedData, "Runs to create a related document")
-  Rel(configHub, fusionTeam, "Reads hub, project, and folder from active document")
-  Rel(configHub, hubJson, "Writes hub entry")
+  Rel(configHub, fusionTeam, "Browses cloud folders; resolves the owning hub and project")
+  Rel(configHub, hubJson, "Upserts hub entry by hub id")
   Rel(relatedData, hubJson, "Reads hub configuration")
   Rel(relatedData, cache, "Reads or writes template list")
   Rel(relatedData, fusionTeam, "Fetches templates (cache miss); saves new document")
@@ -75,7 +75,7 @@ C4Context
 ## Getting Started
 
 1. **Create a templates folder** in your Team Hub. See [Create Related Data — Step 1](./docs/Related%20Data.md#step-1--create-the-templates-project-and-folder-in-fusion-team).
-2. **Configure the hub.** Open a document saved in your templates folder and run **Configure Hub**. See [Configure Hub](./docs/Configure%20Hub.md).
+2. **Configure the hub.** Run **Configure Hub** and pick your templates folder in the cloud folder picker. See [Configure Hub](./docs/Configure%20Hub.md).
 3. **Create a related document.** Open the source document you want to reference and run **Create Related Data**. See [Create Related Data](./docs/Related%20Data.md).
 
 ---

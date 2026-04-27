@@ -7,21 +7,13 @@ import json
 from ...lib import fusionAddInUtils as futil
 from ... import config
 
-# Module-level vars used to pass data from command_created to command_execute.
-_pending_hub_id = ""
-_pending_hub_name = ""
-_pending_project_id = ""
-_pending_project_name = ""
-_pending_folder_id = ""
-_pending_folder_name = ""
-
 app = adsk.core.Application.get()
 ui = app.userInterface
 
 # Command identity information.
 CMD_ID = f"{config.COMPANY_NAME}_{config.ADDIN_NAME}_configHub"
 CMD_NAME = "Configure Hub"
-CMD_Description = "Configure the Team Hub for Power Tools"
+CMD_Description = "Configure the Team Hub for Power Tools Related Data Command. Browse and Cache the location of a cloud folder that contains the start parts used to create a related data Document Relationship useful to allow multiple people to work on different downstream domains from a shared source part.\nThe create Related Data command is in the 3D Design -> Solid -> Create Toolbar Panel."
 
 # QAT flyout (shared across PowerTools add-ins — create only if absent).
 PT_SETTINGS_ID = "PTSettings"
@@ -35,10 +27,6 @@ ADDIN_PATH = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 HUB_JSON_PATH = os.path.join(ADDIN_PATH, "hub.json")
-
-# Local list of event handlers used to maintain a reference so
-# they are not released and garbage collected.
-local_handlers = []
 
 
 # Executed when add-in is run.
@@ -102,138 +90,100 @@ def _load_hubs():
     return data.get("hubs", [])
 
 
-def _hub_is_listed(hub_id, hubs):
-    """Return True if hub_id is already present in the hubs list."""
-    return any(entry.get("id") == hub_id for entry in hubs)
+def _resolve_hub_for_folder(folder):
+    """Return the DataHub that owns *folder*, or None if not found."""
+    project = folder.parentProject
+    if project is None:
+        return None
+    for i in range(app.data.dataHubs.count):
+        hub = app.data.dataHubs.item(i)
+        if hub.dataProjects.itemById(project.id) is not None:
+            return hub
+    return None
 
 
-def _find_project_for_folder(hub, folder):
-    """Walk *folder* up to the root DataFolder then find which DataProject owns it."""
-    root = folder
-    try:
-        while root.parentFolder is not None:
-            root = root.parentFolder
-    except Exception:
-        pass
-
-    for project in hub.dataProjects:
-        try:
-            if project.rootFolder.id == root.id:
-                return project
-        except Exception:
-            continue
+def _find_hub_entry(hub_id, hubs):
+    """Return the entry dict for *hub_id*, or None if not present."""
+    for entry in hubs:
+        if entry.get("id") == hub_id:
+            return entry
     return None
 
 
 # Function that is called when a user clicks the corresponding button in the UI.
-# This defines the contents of the command dialog and connects to the command related events.
+# Runs the entire flow inline — no command inputs are added, so Fusion auto-executes
+# without showing a command dialog.
 def command_created(args: adsk.core.CommandCreatedEventArgs):
     futil.log(f"{CMD_NAME} Command Created Event")
 
-    global _pending_hub_id, _pending_hub_name, _pending_project_id, _pending_project_name, _pending_folder_id, _pending_folder_name
-
-    inputs = args.command.commandInputs
     active_hub = app.data.activeHub
-
-    # Load the current hub list (may be empty if hub.json doesn't exist yet).
     hubs = _load_hubs()
 
-    # If the active hub is already in the list there is nothing to do.
-    if _hub_is_listed(active_hub.id, hubs):
-        ui.messageBox(
-            f'"{active_hub.name}" is already configured.\nNo changes were made.',
-            "Hub Already Added",
-            0,
-            2,
+    # If the active hub already has an entry, surface the current location and
+    # let the user cancel out or continue to repoint it.
+    existing = _find_hub_entry(active_hub.id, hubs) if active_hub else None
+    if existing is not None:
+        result = ui.messageBox(
+            f'"{existing.get("name", active_hub.name)}" is already configured.'
+            f'\n\nProject: {existing.get("project_name", "")}'
+            f'\nFolder: {existing.get("folder_name", "")}'
+            f"\n\nClick OK to choose a new location, or Cancel to leave it unchanged.",
+            "Hub Already Configured",
+            adsk.core.MessageBoxButtonTypes.OKCancelButtonType,
+            adsk.core.MessageBoxIconTypes.QuestionIconType,
         )
+        if result != adsk.core.DialogResults.DialogOK:
+            return
+
+    # Tell the user what to do, then open the cloud folder picker.
+    ui.messageBox(
+        "Browse to the cloud folder that contains your start parts or templates.",
+        "Configure Hub",
+        adsk.core.MessageBoxButtonTypes.OKButtonType,
+        adsk.core.MessageBoxIconTypes.InformationIconType,
+    )
+
+    dialog = ui.createCloudFolderDialog()
+    dialog.title = "Select Templates Folder"
+    if app.activeDocument is not None and app.activeDocument.isSaved:
+        dialog.initialFolder = app.activeDocument.dataFile.parentFolder
+    if dialog.showDialog() != adsk.core.DialogResults.DialogOK:
         return
 
-    # A document must be open and saved so we can read its parent folder/project.
-    if app.activeDocument is None:
+    selected_folder = dialog.dataFolder
+    project = selected_folder.parentProject
+    hub = _resolve_hub_for_folder(selected_folder)
+    if hub is None or project is None:
         ui.messageBox(
-            "No document is open.\nPlease open a saved document that lives in your "
-            "templates folder before configuring the hub.",
-            "No Document Open",
-            0,
-            3,
+            "Could not determine which hub owns the selected folder.\nNo changes were made.",
+            "Hub Not Found",
+            adsk.core.MessageBoxButtonTypes.OKButtonType,
+            adsk.core.MessageBoxIconTypes.WarningIconType,
         )
         return
-
-    if app.activeDocument.isSaved is False:
-        ui.messageBox(
-            "The active document has not been saved.\nPlease save the document and try again.",
-            "Document Not Saved",
-            0,
-            3,
-        )
-        return
-
-    # Gather location info from the active document.
-    doc_folder = app.activeDocument.dataFile.parentFolder
-    folder_id = doc_folder.id
-    folder_name = doc_folder.name
-
-    project = _find_project_for_folder(active_hub, doc_folder)
-    project_id = project.id if project else ""
-    project_name = project.name if project else "(unknown)"
-
-    hub_name = active_hub.name
 
     futil.log(
-        f"{CMD_NAME} Hub: {hub_name} | Project: {project_name} ({project_id}) "
-        f"| Folder: {folder_name} ({folder_id})"
+        f"{CMD_NAME} Hub: {hub.name} ({hub.id}) | Project: {project.name} ({project.id}) "
+        f"| Folder: {selected_folder.name} ({selected_folder.id})"
     )
 
-    # Stash values so command_execute can write them without re-querying the API.
-    _pending_hub_id = active_hub.id
-    _pending_hub_name = hub_name
-    _pending_project_id = project_id
-    _pending_project_name = project_name
-    _pending_folder_id = folder_id
-    _pending_folder_name = folder_name
-
-    # Build read-only confirmation dialog.
-    hub_name_input = inputs.addStringValueInput("hubNameInput", "Hub", hub_name)
-    hub_name_input.isEnabled = False
-
-    project_input = inputs.addStringValueInput(
-        "projectInput", "Templates Project", project_name
-    )
-    project_input.isEnabled = False
-
-    folder_input = inputs.addStringValueInput(
-        "parentFolderInput", "Templates Folder", folder_name
-    )
-    folder_input.isEnabled = False
-
-    # Connect to the events.
-    futil.add_handler(
-        args.command.execute, command_execute, local_handlers=local_handlers
-    )
-    futil.add_handler(
-        args.command.destroy, command_destroy, local_handlers=local_handlers
-    )
-
-
-# This event handler is called when the user clicks the OK button in the command dialog.
-def command_execute(args: adsk.core.CommandEventArgs):
-    futil.log(f"{CMD_NAME} Command Execute Event")
-
-    global _pending_hub_id, _pending_hub_name, _pending_project_id, _pending_project_name, _pending_folder_id, _pending_folder_name
-
-    # Load the existing list (or start fresh) and append the new hub entry with
-    # its templates project/folder so relateddata can look up the right files.
-    hubs = _load_hubs()
-    hubs.append(
-        {
-            "id": _pending_hub_id,
-            "name": _pending_hub_name,
-            "project_id": _pending_project_id,
-            "project_name": _pending_project_name,
-            "folder_id": _pending_folder_id,
-            "folder_name": _pending_folder_name,
-        }
-    )
+    # Upsert by hub id: replace the existing entry if present, otherwise append.
+    new_entry = {
+        "id": hub.id,
+        "name": hub.name,
+        "project_id": project.id,
+        "project_name": project.name,
+        "folder_id": selected_folder.id,
+        "folder_name": selected_folder.name,
+    }
+    replaced = False
+    for i, entry in enumerate(hubs):
+        if entry.get("id") == hub.id:
+            hubs[i] = new_entry
+            replaced = True
+            break
+    if not replaced:
+        hubs.append(new_entry)
 
     with open(HUB_JSON_PATH, "w") as f:
         json.dump({"hubs": hubs}, f, indent=2)
@@ -243,20 +193,13 @@ def command_execute(args: adsk.core.CommandEventArgs):
     # Reload in-memory config so all commands immediately see the new hub.
     config.reload_hub_config()
 
+    action = "updated" if replaced else "added"
     ui.messageBox(
-        f"Hub added successfully."
-        f"\nHub: {_pending_hub_name}"
-        f"\nProject: {_pending_project_name}"
-        f"\nFolder: {_pending_folder_name}",
+        f"Hub {action} successfully."
+        f"\nHub: {hub.name}"
+        f"\nProject: {project.name}"
+        f"\nFolder: {selected_folder.name}",
         "Hub Configured",
-        0,
-        2,
+        adsk.core.MessageBoxButtonTypes.OKButtonType,
+        adsk.core.MessageBoxIconTypes.InformationIconType,
     )
-
-
-# This event handler is called when the command terminates.
-def command_destroy(args: adsk.core.CommandEventArgs):
-    futil.log(f"{CMD_NAME} Command Destroy Event")
-
-    global local_handlers
-    local_handlers = []
