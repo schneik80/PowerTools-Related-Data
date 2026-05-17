@@ -222,16 +222,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
         # _load_templates_for_hub already showed an error message.
         return
 
-    returnValue = 1
-    if app.activeDocument.isSaved == False:
-        returnValue = ui.messageBox(
-            "Related Documents can only be created from saved Documents.\nPlease save this document and try again",
-            "Document Not Saved",
-            0,
-            3,
-        )
-
-    if returnValue == 0:
+    if not futil.isSaved():
         return
 
     # Define the dialog for command
