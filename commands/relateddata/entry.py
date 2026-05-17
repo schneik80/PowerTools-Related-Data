@@ -82,7 +82,7 @@ def _load_templates_for_hub(hub_id: str) -> dict:
     if not hub_cfg:
         ui.messageBox(
             "No configuration found for this hub.\n"
-            "Please run 'Configure Hub' and try again.",
+            "Please run 'Select Related Data Folder' and try again.",
             "Hub Not Configured",
             0,
             3,
@@ -95,7 +95,7 @@ def _load_templates_for_hub(hub_id: str) -> dict:
     if not project_id or not folder_id:
         ui.messageBox(
             "The hub configuration is incomplete (missing project or folder ID).\n"
-            "Please run 'Configure Hub' again from a document in your templates folder.",
+            "Please run 'Select Related Data Folder' again from a document in your templates folder.",
             "Incomplete Hub Config",
             0,
             3,

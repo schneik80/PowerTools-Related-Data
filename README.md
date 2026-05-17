@@ -14,13 +14,13 @@ Power Tools for Fusion is an Autodesk Fusion add-in that improves team productiv
 
 ## Commands
 
-### [Configure Hub](./docs/Configure%20Hub.md)
+### [Select Related Data Folder](./docs/Select%20Related%20Data%20Folder.md)
 
-**Configure Hub** is a setup command that registers an Autodesk Fusion Team Hub — along with its templates project and folder — with the add-in. Run this command once per hub, per machine.
+**Select Related Data Folder** is a setup command that registers the cloud folder where your start parts and templates must be located — along with its owning Autodesk Fusion Team Hub and project — with the add-in. Run this command once per hub, per machine.
 
-Run **Configure Hub** and use Fusion's cloud folder picker to browse to the folder that contains your start parts or templates. The owning hub and project are resolved automatically. No manual ID lookup or JSON editing is required.
+Run **Select Related Data Folder** and use Fusion's cloud folder picker to browse to the folder that contains your start parts or templates. The owning hub and project are resolved automatically. No manual ID lookup or JSON editing is required.
 
-Hub configuration is stored in `hub.json` at the add-in root. Multiple hubs are supported. Re-running on a hub that is already configured lets you re-point it to a different folder. To remove a hub, edit `hub.json` directly.
+Hub configuration is stored in `hub.json` at the add-in root. Multiple hubs are supported, and the folder must be selected once for each hub. Re-running on a hub that is already configured lets you re-point it to a different folder. To remove a hub, edit `hub.json` directly.
 
 **Location:** Quick Access Toolbar → File menu → **PowerTools Settings** flyout
 
@@ -53,13 +53,13 @@ C4Context
   Person(user, "Fusion User", "Runs add-in commands from the Fusion toolbar")
 
   System_Boundary(addin, "PowerTools Add-in") {
-    System(configHub, "Configure Hub", "Registers a Team Hub, project, and folder in hub.json")
+    System(configHub, "Select Related Data Folder", "Registers a Team Hub, project, and folder in hub.json")
     System(relatedData, "Create Related Data", "Creates a new document from a template with an external reference to the source document")
   }
 
   SystemDb(hubJson, "hub.json", "Local configuration file — stores registered hub IDs, project IDs, and folder IDs")
-  SystemDb(cache, "Template Cache", "cache/<hub-id>.json — local cache of available templates per hub")
-  SystemExt(fusionTeam, "Autodesk Fusion Team", "Cloud data management — hosts hubs, projects, folders, and .f3d documents")
+  SystemDb(cache, "Template Cache", "cache/[hub-id].json — local cache of available templates per hub")
+  System_Ext(fusionTeam, "Autodesk Fusion Team", "Cloud data management — hosts hubs, projects, folders, and .f3d documents")
 
   Rel(user, configHub, "Runs once per hub")
   Rel(user, relatedData, "Runs to create a related document")
@@ -75,7 +75,7 @@ C4Context
 ## Getting Started
 
 1. **Create a templates folder** in your Team Hub. See [Create Related Data — Step 1](./docs/Related%20Data.md#step-1--create-the-templates-project-and-folder-in-fusion-team).
-2. **Configure the hub.** Run **Configure Hub** and pick your templates folder in the cloud folder picker. See [Configure Hub](./docs/Configure%20Hub.md).
+2. **Select the related data folder.** Run **Select Related Data Folder** and pick your templates folder in the cloud folder picker. See [Select Related Data Folder](./docs/Select%20Related%20Data%20Folder.md).
 3. **Create a related document.** Open the source document you want to reference and run **Create Related Data**. See [Create Related Data](./docs/Related%20Data.md).
 
 ---

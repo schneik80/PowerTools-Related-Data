@@ -12,8 +12,15 @@ ui = app.userInterface
 
 # Command identity information.
 CMD_ID = f"{config.COMPANY_NAME}_{config.ADDIN_NAME}_configHub"
-CMD_NAME = "Configure Hub"
-CMD_Description = "Configure the Team Hub for Power Tools Related Data Command. Browse and Cache the location of a cloud folder that contains the start parts used to create a related data Document Relationship useful to allow multiple people to work on different downstream domains from a shared source part.\nThe create Related Data command is in the 3D Design -> Solid -> Create Toolbar Panel."
+CMD_NAME = "Select Related Data Folder"
+CMD_Description = (
+    "Select the cloud folder where your start parts and templates must be located. "
+    "The Create Related Data command copies templates from this folder to create a "
+    "related document that lets multiple people work on different downstream domains "
+    "from a shared source part.\n"
+    "This folder must be configured once for each Team Hub.\n"
+    "The Create Related Data command is in the Design workspace -> Create panel."
+)
 
 # QAT flyout (shared across PowerTools add-ins — create only if absent).
 PT_SETTINGS_ID = "PTSettings"
@@ -138,7 +145,7 @@ def command_created(args: adsk.core.CommandCreatedEventArgs):
     # Tell the user what to do, then open the cloud folder picker.
     ui.messageBox(
         "Browse to the cloud folder that contains your start parts or templates.",
-        "Configure Hub",
+        "Select Related Data Folder",
         adsk.core.MessageBoxButtonTypes.OKButtonType,
         adsk.core.MessageBoxIconTypes.InformationIconType,
     )

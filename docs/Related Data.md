@@ -153,19 +153,19 @@ Template documents are `.f3d` files stored in a dedicated folder inside a Team H
 4. Inside the project, create a folder — recommended name: **Related Data** or **Start Parts**.
 5. Create or upload `.f3d` documents into that folder — one file per workflow.
 
-### Step 2 — Configure the hub (once per machine and hub)
+### Step 2 — Select the related data folder (once per machine and hub)
 
-The **Configure Hub** command opens Fusion's cloud folder picker, lets you browse to your templates folder, and resolves the owning hub and project automatically. No manual JSON editing is required.
+The **Select Related Data Folder** command opens Fusion's cloud folder picker, lets you browse to the folder where your start parts and templates must be located, and resolves the owning hub and project automatically. No manual JSON editing is required.
 
-See the [Configure Hub](./Configure%20Hub.md) documentation for the full walkthrough.
+See the [Select Related Data Folder](./Select%20Related%20Data%20Folder.md) documentation for the full walkthrough.
 
 In brief:
 
-1. Run **Configure Hub** from the **Quick Access Toolbar → File menu → PowerTools Settings** flyout.
+1. Run **Select Related Data Folder** from the **Quick Access Toolbar → File menu → PowerTools Settings** flyout.
 2. Click **OK** on the prompt to launch the cloud folder picker.
 3. Browse to the folder that contains your template `.f3d` files and confirm the selection.
 
-The hub configuration is written to `hub.json` at the add-in root. Multiple hubs can be configured — run **Configure Hub** once for each hub. Re-running on an already-configured hub lets you re-point it to a new folder.
+The hub configuration is written to `hub.json` at the add-in root. Multiple hubs can be configured, and the folder must be selected once for each hub. Re-running on an already-configured hub lets you re-point it to a new folder.
 
 ### Step 3 — Use the command
 
@@ -185,7 +185,7 @@ The hub configuration is written to `hub.json` at the add-in root. Multiple hubs
 
 ## Template cache
 
-After the first successful run, the add-in saves a local cache file at `cache/<hub-id>.json` that lists all templates found in the configured folder. Subsequent runs load from the cache instead of querying the API, which makes the dialog open faster.
+After the first successful run, the add-in saves a local cache file at `cache/[hub-id].json` that lists all templates found in the configured folder. Subsequent runs load from the cache instead of querying the API, which makes the dialog open faster.
 
 **To refresh the cache** — for example, after adding or renaming templates:
 
@@ -201,7 +201,7 @@ When you run **Create Related Data**, the add-in follows this sequence:
 
 1. Reloads the in-memory hub configuration from `hub.json` to pick up any recently added hubs.
 2. Checks whether the active hub ID is in the configured hub list. If it is not, an error message is displayed.
-3. Calls `_load_templates_for_hub()`, which checks for a local cache file at `cache/<hub-id>.json`. On a cache hit, templates are loaded from disk. On a cache miss, templates are fetched from the Fusion API, then written to the cache for future use.
+3. Calls `_load_templates_for_hub()`, which checks for a local cache file at `cache/[hub-id].json`. On a cache hit, templates are loaded from disk. On a cache miss, templates are fetched from the Fusion API, then written to the cache for future use.
 4. Verifies that the source document is saved.
 5. Presents the command dialog with a **Type** drop-down listing all available templates and an **Auto-Name** toggle.
 6. When the user selects a template, the document name field updates automatically to `<source name> ‹+› <template name>`.
@@ -224,8 +224,8 @@ C4Context
   }
 
   SystemDb(hubJson, "hub.json", "Local configuration file — registered hub, project, and folder IDs")
-  SystemDb(cache, "Template Cache", "cache/<hub-id>.json — cached list of available templates per hub")
-  SystemExt(fusionTeam, "Autodesk Fusion Team", "Hosts hub data, template .f3d files, and the destination folder for new documents")
+  SystemDb(cache, "Template Cache", "cache/[hub-id].json — cached list of available templates per hub")
+  System_Ext(fusionTeam, "Autodesk Fusion Team", "Hosts hub data, template .f3d files, and the destination folder for new documents")
 
   Rel(user, relatedData, "Selects template, optionally sets name, clicks OK")
   Rel(relatedData, hubJson, "Reads hub and folder configuration")
@@ -250,8 +250,8 @@ C4Container
   }
 
   SystemDb(hubJson, "hub.json", "Local JSON configuration file")
-  SystemDb(cache, "cache/<hub-id>.json", "Local template cache file per hub")
-  SystemExt(fusionApi, "Fusion API (adsk.core / adsk.fusion)", "Provides documents.open(), document.saveAs(), occurrences.addByInsert(), dataProjects, dataFolders")
+  SystemDb(cache, "cache/[hub-id].json", "Local template cache file per hub")
+  System_Ext(fusionApi, "Fusion API (adsk.core / adsk.fusion)", "Provides documents.open(), document.saveAs(), occurrences.addByInsert(), dataProjects, dataFolders")
 
   Rel(user, cmdCreated, "Clicks Create Related Data")
   Rel(cmdCreated, configModule, "Calls reload_hub_config(); checks COMPANY_HUB")
