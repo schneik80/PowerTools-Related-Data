@@ -155,4 +155,9 @@ Network Trash Folder
 #user specific data files
 hub.json
 Hub.json
-cache/*.json
+
+# Cache folders
+cache/
+.claude/
+.cursor/rules/
+.github/
