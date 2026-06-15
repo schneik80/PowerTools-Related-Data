@@ -4,6 +4,8 @@
 from .relateddata import entry as relateddata
 from .confighub import entry as confighub
 
+from ..lib import fusionAddInUtils as futil
+
 commands = [
     confighub,
     relateddata,
@@ -12,9 +14,15 @@ commands = [
 
 def start():
     for command in commands:
-        command.start()
+        try:
+            command.start()
+        except Exception:
+            futil.handle_error(command.__name__)
 
 
 def stop():
     for command in commands:
-        command.stop()
+        try:
+            command.stop()
+        except Exception:
+            futil.handle_error(command.__name__)

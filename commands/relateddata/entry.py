@@ -157,34 +157,27 @@ def start():
 
     # Add the command to each tab/panel.
     for tab_info in TABS:
-        toolbar_tab = workspace.toolbarTabs.itemById(tab_info["TAB_ID"])
-        if toolbar_tab is None:
-            toolbar_tab = workspace.toolbarTabs.add(
-                tab_info["TAB_ID"], tab_info["TAB_NAME"]
-            )
-
-        panel = toolbar_tab.toolbarPanels.itemById(tab_info["PANEL_ID"])
-        if panel is None:
-            panel = toolbar_tab.toolbarPanels.add(
-                tab_info["PANEL_ID"], tab_info["PANEL_NAME"]
-            )
-
-        control = panel.controls.addCommand(cmd_def)
-        control.isPromoted = IS_PROMOTED
+        panel = futil.get_or_create_panel(
+            WORKSPACE_ID,
+            tab_info["TAB_ID"],
+            tab_info["TAB_NAME"],
+            tab_info["PANEL_ID"],
+            tab_info["PANEL_NAME"],
+        )
+        if panel:
+            control = panel.controls.addCommand(cmd_def)
+            control.isPromoted = IS_PROMOTED
 
 
 # Executed when add-in is stopped.
 def stop():
-    workspace = ui.workspaces.itemById(WORKSPACE_ID)
-
     for tab_info in TABS:
-        toolbar_tab = workspace.toolbarTabs.itemById(tab_info["TAB_ID"])
-        if toolbar_tab:
-            panel = toolbar_tab.toolbarPanels.itemById(tab_info["PANEL_ID"])
-            if panel:
-                command_control = panel.controls.itemById(CMD_ID)
-                if command_control:
-                    command_control.deleteMe()
+        futil.remove_from_panel(
+            WORKSPACE_ID,
+            tab_info["PANEL_ID"],
+            tab_info["TAB_ID"],
+            CMD_ID,
+        )
 
     command_definition = ui.commandDefinitions.itemById(CMD_ID)
     if command_definition:
